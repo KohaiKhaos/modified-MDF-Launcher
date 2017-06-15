@@ -45,3 +45,10 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+
+#vb stuff that doesn't need to be in github they can build their own.
+obj
+bin
+*.suo
+*.psess
+*.vspx

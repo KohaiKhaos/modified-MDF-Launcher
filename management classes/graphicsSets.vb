@@ -1,0 +1,268 @@
+﻿Imports System.Text.RegularExpressions
+Imports MasterworkDwarfFortress.fileWorking
+Imports Newtonsoft.Json
+
+Public Class graphicsSets
+
+    Private Shared m_tilesetManager As New optionMulti
+
+    Public Shared Sub loadGraphicPacks(ByRef cb As ComboBox, ByRef viewer As tilesetPreviewer)
+        Try            
+            Dim defFile As IO.FileInfo = mwGraphicFilePaths.Find(Function(f As IO.FileInfo) String.Compare(f.Name, "graphics_definitions.JSON", True) = 0)
+            If defFile IsNot Nothing Then
+                globals.m_graphicPackDefs = JsonConvert.DeserializeObject(Of List(Of graphicPackDefinition))(readFile(defFile.FullName), globals.m_defaultSerializeOptions)
+                For Each gdf As graphicPackDefinition In globals.m_graphicPackDefs.Distinct(New graphicPackDefinitionTilesetTypeComparer)
+                    m_tilesetManager.tokenList.Add(New rawToken(gdf.tilesetType, getGraphicTag(True, gdf.tilesetType), getGraphicTag(False, gdf.tilesetType)))
+                    viewer.loadImage(gdf.name, gdf.tilesetPath)
+                Next
+            End If
+
+            cb.DataSource = Nothing
+            cb.DataSource = globals.m_graphicPackDefs
+            cb.ValueMember = "Name"
+            cb.DisplayMember = "Name"
+
+            cb.SelectedValue = My.Settings.Item("GRAPHICS")
+        Catch ex As Exception
+
+        End Try
+    End Sub
+
+    Public Shared Sub loadColorSchemes(ByRef cbColors As optionComboBoxFileReplace)
+        Try
+            cbColors.options.itemList.Clear()
+            cbColors.DataSource = Nothing
+            Dim schemes As List(Of IO.FileInfo) = mwFilePaths.Where(Function(fi As IO.FileInfo) fi.DirectoryName.Contains(IO.Path.Combine(globals.m_SettingsDir, "Colors"))).ToList
+            For Each fi As IO.FileInfo In schemes
+                Dim niceName As String = IO.Path.GetFileNameWithoutExtension(fi.Name).Replace("colors_", "").Trim.Replace("_", " ")
+                Dim key As String = niceName.ToUpper.Replace(" ", "")
+                cbColors.options.itemList.Add(New comboFileItem(key, niceName, fi.Name, fi.FullName))
+            Next
+            cbColors.DataSource = cbColors.options.itemList
+            cbColors.ValueMember = "value"
+            cbColors.DisplayMember = "display"
+        Catch ex As Exception
+
+        End Try
+    End Sub
+
+    Public Shared Sub loadTwbtFonts(ByRef cbTwbtFonts As optionComboBoxFileReplace, ByRef viewer As tilesetPreviewer)
+        Try
+            cbTwbtFonts.options.itemList.Clear()
+            cbTwbtFonts.DataSource = Nothing
+            Dim twbtFonts As List(Of IO.FileInfo) = mwFilePaths.Where(Function(fi As IO.FileInfo) fi.DirectoryName.Contains(IO.Path.Combine(globals.m_SettingsDir, "TwbtFonts"))).ToList
+            For Each fi As IO.FileInfo In twbtFonts
+                Dim niceName As String = IO.Path.GetFileNameWithoutExtension(fi.Name)
+                Dim key As String = niceName.ToUpper.Replace(" ", "")
+                cbTwbtFonts.options.itemList.Add(New comboFileItem(key, niceName, fi.Name, fi.FullName))
+                viewer.loadImage(key, fi.FullName)
+            Next
+            cbTwbtFonts.DataSource = cbTwbtFonts.options.itemList
+            cbTwbtFonts.ValueMember = "value"
+            cbTwbtFonts.DisplayMember = "display"
+        Catch ex As Exception
+
+        End Try
+    End Sub
+
+    Private Shared Function getGraphicTag(ByVal yesOption As Boolean, ByVal typeName As String) As String
+        Dim result As String = ""
+        If yesOption Then
+            result = String.Format("YES{0}_GRAPHICS[", typeName.ToUpper)
+        Else
+            result = String.Format("!NO{0}_GRAPHICS!", typeName.ToUpper)
+        End If
+        Return result
+    End Function
+
+    Public Shared Sub switchGraphics(ByVal selectedPackName As String, Optional ByVal showPrompts As Boolean = True)
+        If showPrompts AndAlso MsgBox("This will change raw files and update the graphics!" & vbNewLine & vbNewLine & "After completion you will be asked to update your save files." & vbNewLine & vbNewLine & "Continue?", MsgBoxStyle.Question + MsgBoxStyle.YesNo, "Confirm Graphics") = MsgBoxResult.No Then
+            Exit Sub
+        End If
+        Try
+            'first update the graphics section (sky,chasm,pillar,tracks) from the graphics d_init to the df d_init
+            Dim om As New optionManager
+            Dim basePattern As String = ".*(\\" & selectedPackName & "\\)"
+            Dim rx As New Regex(basePattern & ".*(d_init.txt)", RegexOptions.IgnoreCase)
+            Dim f_info As IO.FileInfo = mwGraphicFilePaths.Find(Function(f As IO.FileInfo) rx.IsMatch(f.FullName))
+            If f_info IsNot Nothing Then
+                Dim graphicsDInit As String = f_info.FullName
+                If graphicsDInit <> "" Then
+                    Dim pattern As String = "\[(?(SKY|IDLERS)\w+):(?<value>.*)\]"
+                    Dim data As String = readFile(graphicsDInit)
+                    Dim graphicsData As String = ""
+                    Dim matches As MatchCollection = Regex.Matches(data, pattern)
+                    If matches.Count = 2 Then
+                        graphicsData = data.Substring(matches(0).Index, matches(1).Index - matches(0).Index)
+                        data = globals.m_dinit
+                        matches = Regex.Matches(data, pattern)
+                        If matches.Count = 2 Then
+                            Dim strBefore As String = data.Substring(0, matches(0).Index)
+                            Dim strAfter As String = data.Substring(matches(1).Index)
+                            If strBefore <> "" And strAfter <> "" And graphicsData <> "" Then
+                                data = strBefore & graphicsData & strAfter
+                                om.saveFile(findDfFilePath("d_init.txt"), data)
+                            End If
+                        End If
+                    End If
+                Else
+                    MsgBox("Failed to update tileset data in d_init.txt!", MsgBoxStyle.Exclamation + MsgBoxStyle.OkOnly, "Failed")
+                End If
+            End If
+
+            'next copy the tileset; currently these are all named 'Phoebus_16x16.png'
+            Dim tileSetName As String = "Phoebus_16x16.png"
+            rx = New Regex(basePattern & ".*(" & tileSetName & ")", RegexOptions.IgnoreCase)
+            f_info = mwGraphicFilePaths.Find(Function(f As IO.FileInfo) rx.IsMatch(f.FullName))
+            If findGraphicsPackTilesetImage(selectedPackName) IsNot Nothing Then
+                Dim gTileSet As String = f_info.FullName
+                Dim dfTileSet As String = findDfFilePath(tileSetName)
+                If gTileSet <> "" And dfTileSet <> "" Then
+                    IO.File.Copy(gTileSet, dfTileSet, True)
+                End If
+            End If
+
+            'next copy the overrides.txt over, this written by amostubal'
+            Dim overridesTxtName As String = "overrides.txt"
+            rx = New Regex(basePattern & ".*(" & overridesTxtName & ")", RegexOptions.IgnoreCase)
+            f_info = mwGraphicFilePaths.Find(Function(f As IO.FileInfo) rx.IsMatch(f.FullName))
+            If findGraphicsPackTilesetImage(selectedPackName) IsNot Nothing Then
+                Dim gOverridesTxt As String = f_info.FullName
+                Dim dfOverridesTxt As String = findDfFilePath(overridesTxtName)
+                If gOverridesTxt <> "" And dfOverridesTxt <> "" Then
+                    IO.File.Copy(gOverridesTxt, dfOverridesTxt, True)
+                End If
+            End If
+
+            'next copy the raw files. for now it's assumed these are in the <graphics pack name dir>\raw\ folder
+            Try
+                Dim gDir As IO.DirectoryInfo = mwGraphicDirs.Find(Function(d As IO.DirectoryInfo) String.Compare(d.Name, selectedPackName, True) = 0)
+                If gDir IsNot Nothing Then
+                    Dim fsp As MyServices.FileSystemProxy = My.Computer.FileSystem
+                    Dim mwPath As String = IO.Path.Combine(gDir.FullName, "raw")
+                    Dim dfPath As String = IO.Path.Combine(globals.m_dwarfFortressRootDir, "raw")
+                    If fsp.DirectoryExists(mwPath) And fsp.DirectoryExists(dfPath) Then
+                        fsp.CopyDirectory(mwPath, dfPath, True)
+                        Dim gFilePaths As List(Of String) = IO.Directory.GetFiles(IO.Path.Combine(mwPath, "objects"), "*.txt", IO.SearchOption.AllDirectories).ToList
+                        For idx As Integer = 0 To gFilePaths.Count - 1
+                            gFilePaths(idx) = IO.Path.GetFileName(gFilePaths(idx))
+                        Next
+                        Dim relatedRaws As List(Of IO.FileInfo) = globals.m_dfRaws.Keys.Where(Function(f As IO.FileInfo) gFilePaths.Contains(f.Name)).ToList
+                        For Each fi As IO.FileInfo In relatedRaws
+                            globals.m_dfRaws.Item(fi) = readFile(fi.FullName, False)
+                        Next
+                    Else
+                        MsgBox("Invalid paths for graphics pack raws.", MsgBoxStyle.Critical + MsgBoxStyle.OkOnly, "Failed")
+                    End If
+
+
+
+                    If globals.m_graphicPackDefs.Count > 0 Then
+                        For Each gpd As graphicPackDefinition In globals.m_graphicPackDefs
+                            If String.Compare(gpd.name, selectedPackName, True) = 0 Then
+                                Try
+                                    'if we're not showing prompts, we don't want to mess with the colors
+                                    If showPrompts Then
+                                        Dim color As String = gpd.colorScheme
+                                        If color <> MainForm.optCbColors.SelectedValue.ToString AndAlso MsgBox("This tileset has a color scheme associated with it, would you like apply it as well?", MsgBoxStyle.Question + MsgBoxStyle.YesNo, "Change Colors") = MsgBoxResult.Yes Then
+                                            MainForm.optCbColors.SelectedValue = color
+                                            MainForm.optCbColors.saveOption()
+                                        End If
+                                    End If
+                                Catch ex As Exception
+                                    MsgBox("Failed to apply the default color scheme!" & vbCrLf & vbCrLf & "Error: " & ex.ToString, MsgBoxStyle.Critical + MsgBoxStyle.OkOnly, "Failed")
+                                End Try
+                                Exit For
+                            End If
+                        Next
+                    End If
+
+
+                Else
+                    MsgBox("Could not find the graphics pack directory! No changes have been applied!", MsgBoxStyle.Critical + MsgBoxStyle.OkOnly, "Failed")
+                End If
+            Catch ex As Exception
+                MsgBox("Failed to copy graphics pack raw folder." & vbCrLf & vbCrLf & "Error: " & ex.ToString, MsgBoxStyle.Critical + MsgBoxStyle.OkOnly, "Failed")
+            End Try
+
+            'finally toggle the relevant tags in the files affected by the selected graphics pack
+            Try
+                Dim currGpd As graphicPackDefinition = Nothing
+                For Each gpd As graphicPackDefinition In globals.m_graphicPackDefs
+                    If gpd.name = selectedPackName Then
+                        currGpd = gpd : Exit For
+                    End If
+                Next
+                'this manager will always be 'enabling' the tags, so swap the on to off value if we need to disable the other graphics tags
+                If currGpd IsNot Nothing Then
+                    Dim yesVal As String = ""
+                    For Each t As rawToken In m_tilesetManager.tokenList
+                        If t.tokenName <> currGpd.tilesetType Then
+                            If t.optionOnValue.Contains("YES") Then
+                                yesVal = t.optionOnValue
+                                t.optionOnValue = t.optionOffValue
+                                t.optionOffValue = yesVal
+                            End If
+                        Else
+                            t.optionOnValue = getGraphicTag(True, currGpd.tilesetType)
+                            t.optionOffValue = getGraphicTag(False, currGpd.tilesetType)
+                        End If
+                    Next
+                    'refresh to ensure we have all the files we need
+                    m_tilesetManager.loadOption()
+                    'save and update the files with the tags
+                    m_tilesetManager.saveOption(True)
+                End If
+            Catch ex As Exception
+                utils.MsgBoxExp("Failed", "Graphic Options Problem", MessageBoxIcon.Error, "Failed to change the graphic pack's options in one or more files.", MessageBoxButtons.OK, ex.ToString)
+            End Try
+
+            My.Settings.Item("GRAPHICS") = selectedPackName
+            If showPrompts Then MsgBox("Graphics successfully switched.", MsgBoxStyle.Information + MsgBoxStyle.OkOnly, "Success")
+
+        Catch ex As Exception
+            utils.MsgBoxExp("Graphics Error", "Error Changing Graphics", MessageBoxIcon.Error, "There has been a problem while attempting to switch graphics and/or colors.", MessageBoxButtons.OK, ex.ToString)
+        End Try
+        'added by Amostubal - basically a test run to updateSavedGames as is written previously.
+        graphicsSets.updateSavedGames()
+    End Sub
+
+    Public Shared Function findGraphicsPackTilesetImage(ByVal selectedPackName As String) As IO.FileInfo
+        Dim tileSetName As String = "Phoebus_16x16.png"
+        Dim rx As New Regex(".*(\\" & selectedPackName & "\\)" & ".*(" & tileSetName & ")", RegexOptions.IgnoreCase)
+        Return mwGraphicFilePaths.Find(Function(f As IO.FileInfo) rx.IsMatch(f.FullName))
+    End Function
+
+    Public Shared Sub updateSavedGames()
+        If MsgBox("Would you like to update your saves?" & vbCrLf & vbCrLf &
+                  "WARNING: This can cause issues. every attempt has been made to ensure there are no issues, but cannot be 100% guaranteed. You may wish to make backup copies of your saves prior to attempting this. If there are any issues please post them to our forums immediately so we can fix them." &
+                  vbCrLf & vbCrLf & "Are you sure you wish to continue?", MsgBoxStyle.Exclamation + MsgBoxStyle.YesNo, "Confirm Save Game Update") = MsgBoxResult.Yes Then
+            Try
+                Dim fsp As MyServices.FileSystemProxy = My.Computer.FileSystem
+                Dim dfRawPath As String = IO.Path.Combine(globals.m_dwarfFortressRootDir, "raw")
+
+                'find all save games
+                Dim saveGameDirs As List(Of IO.DirectoryInfo) = fileWorking.savedGameDirs
+                If saveGameDirs.Count > 1 Then 'exclude current
+
+                    For Each save As IO.DirectoryInfo In saveGameDirs.Where(Function(d As IO.DirectoryInfo) d.Name <> "current")
+                        Dim saveRawPath As String = IO.Path.Combine(save.FullName, "raw")
+                        Dim saveGraphicsPath As String = IO.Path.Combine(saveRawPath, "graphics")
+                        'delete the old graphics
+                        If fsp.DirectoryExists(saveGraphicsPath) Then fsp.DeleteDirectory(saveGraphicsPath, FileIO.DeleteDirectoryOption.DeleteAllContents)
+                        'copy all the raws
+                        fsp.CopyDirectory(dfRawPath, saveRawPath, True)
+                    Next
+                    MsgBox("Saved games have been updated successfully!", MsgBoxStyle.Information + MsgBoxStyle.OkOnly)
+                Else
+                    MsgBox("No saved games found to update.", MsgBoxStyle.Information + MsgBoxStyle.OkOnly)
+                End If
+
+            Catch ex As Exception
+                MsgBox("Something went horribly wrong while attempting to update the saved games!" & vbCrLf & vbCrLf & "Error: " & ex.ToString, MsgBoxStyle.Critical + MsgBoxStyle.OkOnly, "Failed")
+            End Try
+        End If
+    End Sub
+
+
+End Class
