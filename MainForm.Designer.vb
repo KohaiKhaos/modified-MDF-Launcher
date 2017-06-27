@@ -7308,7 +7308,7 @@ Partial Class MainForm
         Me.OptionSingleReplaceButton68.isEnabled = True
         Me.OptionSingleReplaceButton68.Location = New System.Drawing.Point(15, 194)
         Me.OptionSingleReplaceButton68.Name = "OptionSingleReplaceButton68"
-        OptionSingleReplace73.disabledValue = "NO__STANDARD__MILK_MOD[[MILKABLE:LOCAL_CREATURE:MAT:MILK"
+        OptionSingleReplace73.disabledValue = "NO__STANDARD__MILK_MOD[MILKABLE:LOCAL_CREATURE:MAT:MILK"
         OptionSingleReplace73.enabledValue = "YES_STANDARD_MILK[MILKABLE:CREATURE_MAT:ANIMAL_MILK:MILK"
         FileListManager148.fileNames = CType(resources.GetObject("FileListManager148.fileNames"), System.Collections.Generic.List(Of String))
         OptionSingleReplace73.fileManager = FileListManager148
