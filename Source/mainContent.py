@@ -80,3 +80,38 @@ class standardPageFrame(tk.Frame):
 				z = z+1
 			content.columnconfigure(x,minsize=50)
 			x = x+1
+			
+			
+class tabularPageFrame(tk.Frame)
+	def __init__(self, master,name,options,civs,accessmatrix):
+		self.frame = tk.Frame.__init__(self, master,class_='standardPageFrame')
+		self.master = master
+		self.name = name
+		self.options = options
+		self.civs = civs
+		self.matrix = accessmatrix
+		self.createWidgets()
+	
+	def createWidgets(self):
+		label1 = tk.Label(self,text = self.name)
+		label1.grid()
+		
+		for y,c in enumerate(self.civs,1):
+			civlabel = tk.Label(self,text = c)
+			civlabel.grid(row=y,column=0)
+		
+		for x,sets in enumerate(self.options,1):
+			optlabel = tk.Label(self,text = sets[0])
+			optlabel.grid(row=0,column=x)
+			for y,c in enumerate(self.civs,1):
+				matrixmenu = tk.Menu(self,text="foo")
+				matrixmenu.title = tk.StringVar()
+				matrixmenu.configure(textvariable=control.title)
+				matrixmenu.title.set(sets[1][0])
+				matrixmenu.menu = tk.Menu(matrixmenu,tearoff=0)
+				matrixmenu['menu'] = matrixmenu.menu
+				matrixmenu.grid(row=y,column=x)
+				for z,choices in enumerate(sets[1]):
+					matrixmenu.menu.add_radiobutton(label=sets[1][z][8:],value=sets[1][z][8:],variable=matrixmenu.title)
+				
+				

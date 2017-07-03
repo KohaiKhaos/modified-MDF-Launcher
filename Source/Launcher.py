@@ -1,4 +1,5 @@
 import tkinter as tk
+import copy
 import mainContent
 import configuration
 
@@ -13,46 +14,43 @@ class Application(tk.Frame):
 		self.createWidgets()
 
 	def optionWidgets(self):
-		self.option_add("*Background","#000")
-		self.option_add("*Foreground","#FFF")
+		self.option_add("*Background",BACKGROUND_COLOR)
+		self.option_add("*Foreground",FOREGROUND_COLOR)
 
 	def createWidgets(self):
 		top=self.winfo_toplevel()
 		top.columnconfigure(0,minsize=1000, weight=1)
-		top.rowconfigure(0,minsize=700, weight=1)
+		top.rowconfigure(0, weight=1)
 		top.configure(bg=BACKGROUND_COLOR)
-		self.rowconfigure(0, weight=1)
-		self.rowconfigure(1, weight=1)
-		self.rowconfigure(2, weight=1)
-		self.rowconfigure(3, weight=5)
+		self.rowconfigure(0, minsize=50)
+		self.rowconfigure(1, minsize=50)
+		self.rowconfigure(2, minsize=50)
+		self.rowconfigure(3, minsize=400, weight=5)
 		self.columnconfigure(0, weight=1)
 		
-		self.option_add('*Radiobutton*background',BACKGROUND_COLOR)
-		self.option_add('*Radiobutton*foreground',FOREGROUND_COLOR)
-		
+
+
 		
 		#Top row
 		self.HeaderSet = tk.IntVar()
 		
 		self.HeaderTabs = HeaderTabs(self)
-		self.HeaderTabs.grid(column=0,row=0,sticky=tk.NW,pady=10,padx=10)
+		self.HeaderTabs.grid(column=0,row=0,sticky=tk.NSEW,pady=5,padx=10)
 		
 		#Top bar, just below the top buttons
 		self.HeaderContent = HeaderContent(self)
-		self.HeaderContent.grid(column=0,row=1,sticky=tk.NW,pady=10,padx=10)
+		self.HeaderContent.grid(column=0,row=1,sticky=tk.NSEW,pady=5,padx=10)
 		
 		#Second row, just below top bar
 		self.MainSet = tk.IntVar()
 		
 		self.MainRow = MainRow(self)
-		self.MainRow.grid(column=0,row=2,sticky=tk.NW,pady=5,padx=10)
+		self.MainRow.grid(column=0,row=2,sticky=tk.NSEW,pady=5,padx=10)
 		
 		#Main content
 		self.Main = MainFrame(self)
-		self.Main.grid(column=0,row=3,sticky=tk.NSEW,pady=5,padx=10)
-
-	
-	
+		self.Main.grid(column=0,row=3,sticky=tk.NSEW,padx=10)
+		
 
 ###############################################################################
 
