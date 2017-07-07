@@ -1,7 +1,9 @@
 import tkinter as tk
-import copy
-import mainContent
-import configuration
+import ttk
+import multiprocessing, atexit
+import mainContent, configuration, handshake
+
+
 
 BACKGROUND_COLOR = "#000"
 FOREGROUND_COLOR = "#FFF"
@@ -153,42 +155,37 @@ class MainFrame(tk.Frame):
 		self.master = master
 		self.createWidgets()
 		self.observer()
+		atexit.register(self.config_save)
+		atexit.register(self.file_save)
+		atexit.register(self.exitStateMents)
 	
 	def createWidgets(self):
-		self.config = configuration.configParse()
+		try:
+			self.config = []
+			fp = open(configuration.PICKLE_CONFIG,"rb")
+			for page in configuration.loadConfig():
+				self.config.append(page)
+		except IOError:
+			self.config = configuration.standardConfigParse(self)
 		
-		settingsFrames = self.config[0]
-		settingsContent = self.config[1]
-		self.settings = mainContent.standardPageFrame(self,"Settings",settingsFrames,settingsContent)
-		
-		modFrames = self.config[2]
-		modContent = self.config[3]
-		self.mods = mainContent.standardPageFrame(self,"Mods",modFrames,modContent)
-		
-		civFrames = []
-		civContent = [[[]]]
-		
-		invaFrames = []
-		invaContent = [[[]]]
-		
-		creaFrames = self.config[4]
-		creaContent = self.config[5]
-		self.creatures = mainContent.standardPageFrame(self,"Creatures",creaFrames,creaContent)
-		
-		dwarFrames = self.config[6]
-		dwarContent = self.config[7]
-		self.dwarves = mainContent.standardPageFrame(self,"Dwarves",dwarFrames,dwarContent)
-		
-		koboFrames = []
-		koboContent = [[[]]]
-		
-		orcFrames = []
-		orcContent = [[[]]]
-		
-		worldFrames = []
-		worldcontent = [[[]]]
-		
+		settingsContent = self.config[0]
+		self.settings = mainContent.standardPageFrame(self,settingsContent)
 		self.settings.grid()
+		
+		modContent = self.config[1]
+		self.mods = mainContent.standardPageFrame(self,modContent)
+		self.mods.grid()
+		self.mods.grid_remove()
+		
+		creatureContent = self.config[2]
+		self.creatures = mainContent.standardPageFrame(self,creatureContent)
+		self.creatures.grid()
+		self.creatures.grid_remove()
+		
+		dwarfContent = self.config[3]
+		self.dwarf = mainContent.standardPageFrame(self,dwarfContent)
+		self.dwarf.grid()
+		self.dwarf.grid_remove()
 
 	def observer(self) :
 		self.master.MainSet.trace("w",self.redraw)		
@@ -197,23 +194,64 @@ class MainFrame(tk.Frame):
 		self.settings.grid_remove()
 		self.mods.grid_remove()
 		self.creatures.grid_remove()
-		self.dwarves.grid_remove()
+		self.dwarf.grid_remove()
 		if self.master.MainSet.get() == 1 :
 			self.settings.grid()
-		elif self.master.MainSet.get() == 2 :
+		if self.master.MainSet.get() == 2 :
 			self.mods.grid()
-		elif self.master.MainSet.get() == 5 :
+		if self.master.MainSet.get() == 5 :
 			self.creatures.grid()
-		elif self.master.MainSet.get() == 6 :
-			self.dwarves.grid()
+		if self.master.MainSet.get() == 6 :
+			self.dwarf.grid()
+		self.file_save()
+
+		
+	def exitStateMents(self):
+		print("Saving state")
+		
+	def file_save(self):
+		#Save all edits before you close silly
+		print("Saving everything")
+		vals = []
+		for value in self.settings.getSwitchVals():
+			vals.append(value)
+		for diffs in handshake.compareValues(self.config[0],vals):
+			print(diffs)
+			parent_pipe.send(diffs)
+			
+	def config_save(self):
+		configuration.saveConfigs(self.config)
 
 
 ###############################################################################
 
-app = Application()
-app.master.title('Masterwork Dwarf Fortress')
-app.mainloop()
 
+	
+
+
+	
+#Main
+if __name__ == '__main__':
+	def exit_handler():
+		#Say bye
+		print("Byebye")
+	
+	def getClear():
+		parent_pipe.send("shutdown")
+		parent_pipe.recv()
+	
+	multiprocessing.freeze_support()
+	parent_pipe = handshake.launchFileManager()
+	atexit.register(exit_handler)
+	atexit.register(getClear)
+	parent_pipe.send("startup")
+	app = Application()
+	app.master.title('Masterwork Dwarf Fortress')
+	app.mainloop()
+	
+
+	
+	
 
 
 
@@ -223,24 +261,4 @@ app.mainloop()
 #	[Init]	[Settings]	[Mods]	[Civs]	[Invaders]	[Creatures]	[Dwarf]	[Kobold]	[Orc]	[Worldgen]				Radio buttons
 #	[Main section frame, changeable, controlled by tabs above]
 #	[Content table]		[Content table]		[Content table]
-#	
-#	
-#	
-#	
-#	
-#	
-#	
-#	
-#	
-#	
-#	
-#	
-#	
-#	
-#	
-#	
-#	
-#	
-#	
-#	
 ##########################################################################################################

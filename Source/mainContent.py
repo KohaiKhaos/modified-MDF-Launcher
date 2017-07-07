@@ -1,117 +1,112 @@
 #file: mainContent.py
 
 import tkinter as tk
-
-
+import ttk
 
 defaultSelectColor = "#444"
 defaultActiveBackground ="#555"
 
 
+class modFrame(tk.LabelFrame):
+	def __init__(self,master,content):
 
-
-class contentFrame(tk.LabelFrame):
-	def __init__(self, master, title, content):
-		self.frame = tk.LabelFrame.__init__(self,master,class_='contentFrame')
+		self.frame = tk.LabelFrame.__init__(self,master,class_='modFrame')
 		self.master = master
-		self.title = title
 		self.content = content
-		self.createWidgets()
-		
-	def createWidgets(self):
-		for columns in range(0,len(self.content)):
-			for index,cont in enumerate(self.content[columns]):
-				if cont.startswith("bool"):
-					control = tk.Checkbutton(self,text=cont[4:],variable=self.title+ "_" + cont[4:])
+		self.switchlist = []
+		self.createSwitches()
+	
+	def createSwitches(self):
+		for x,column in enumerate(self.content.getColumns()):
+			for y,switch in enumerate(column.getSwitches()):
+				swinfo = switch.getData()
+				varname = self.content.modname + "_" + swinfo.name
+				if swinfo.type == "bool":
+					control = tk.Checkbutton(self,text=swinfo.name)
+					control.var = tk.IntVar()
+					control.configure(variable=control.var)
 					control.configure(selectcolor=defaultSelectColor,activebackground=defaultActiveBackground)
-					control.grid(row=index,column=columns)
-					
-				elif cont[0].isdigit():
-					x=0
-					while cont[x].isdigit():
-						x = x+1
-					fro = int(cont[0:x])
-					y = x+1 #x is a : at this point if formatting is correct
-					while cont[y].isdigit():
-						y = y+1
-					too = int(cont[x+1:y])
-					label = tk.Label(self,text=cont[y:])
-					control = tk.Spinbox(self,from_=fro,to=too,width=8)
-					label.grid(row=index,column=columns)
-					control.grid(row=index,column=columns+1)
-					
-				elif cont.startswith("listitem"):
-					control.menu.add_radiobutton(label=cont[8:], value=cont[8:],variable=control.title)
-					
-				elif cont.startswith("list"):
-					control = tk.Menubutton(self,text="Stuff")
-					control.title = tk.StringVar()
-					control.configure(textvariable=control.title)
-					control.title.set("Default")
-					control.menu = tk.Menu(control,tearoff=0)
-					control['menu'] = control.menu
-					control.grid(row=index,column=columns)
+					control.grid(row=y,column=x*2,columnspan=2,sticky=tk.W)
+					if swinfo.values == "1":
+						control.select()
+					if swinfo.values == "0":
+						control:deselect()
 				
-	
-
-
+				elif swinfo.type[0].isdigit():
+					a=0
+					try:
+						while swinfo.type[a].isdigit():
+							a = a+1
+						fro = int(swinfo.type[0:a])
+						b = a+1 #x is a : at this point if formatting is correct
+						while swinfo.type[b].isdigit():
+							b = b+1
+					except IndexError:
+						pass
+					too = int(swinfo.type[a+1:b])
+					label = tk.Label(self,text=swinfo.name)
+					control = tk.Spinbox(self,from_=fro,to=too,width=8)
+					control.var = tk.StringVar()
+					control.configure(textvariable=control.var)
+					label.grid(row=y,column=x,sticky=tk.W)
+					control.grid(row=y,column=x+1,sticky=tk.W)
+					control.delete(0, control.index(tk.END))
+					control.insert(0, swinfo.values)
+				
+				elif swinfo.type == "list":
+					#control = tk.Menubutton(self)
+					label = tk.Label(self,text=swinfo.name)
+					control = ttk.Combobox(self)
+					control.var = tk.StringVar()
+					control.configure(state='readonly',textvariable = control.var)
+					control.bind('<<ComboboxSelected>>', control.select_clear())
+					control['values'] = []
+					label.grid(row=y,column=x,padx=10,sticky=tk.W)
+					control.grid(row=y,column=x+1,sticky=tk.W)
+					
+					
+				elif swinfo.type == "listitem":
+					currlist = []
+					for vals in control['values']:
+						currlist.append(vals)
+					currlist.append(swinfo.name)
+					control['values'] = currlist
+					if swinfo.values == "1":
+						try:
+							control.current(len(currlist)-1)
+						except tk.TclError:
+							pass
+				
+				if not swinfo.type == "listitem":
+					self.switchlist.append(control)
+				
+	def getSwitchVals(self):
+		for switch in self.switchlist:
+			yield(switch.var.get())
+			
+				
 class standardPageFrame(tk.Frame):
-	def __init__(self, master,name,frames,content):
-		self.frame = tk.Frame.__init__(self, master,class_='standardPageFrame')
+	def __init__(self, master, content):
+		self.frame = tk.Frame.__init__(self, master, class_='standardPageFrame')
 		self.master = master
-		self.name = name
-		self.frames = frames
 		self.content = content
+		self.modframelist = []
 		self.createWidgets()
 	
 	def createWidgets(self):
-		label1 = tk.Label(self,text = self.name)
+		label1 = tk.Label(self,text = self.content.name)
 		label1.grid()
 		x = 0
 		z = 0
-		for framegroups in self.content:
-			y = 0
-			for frame in self.content[x]:
-				content = contentFrame(self,self.frames[z],self.content[x][y])
-				content.configure(text=self.frames[z])
-				span = max([1,4//len(self.content[x])])
-				content.grid(row=y*span+1,column=x,sticky=tk.N,padx=5,pady=10,rowspan=span)
-				y = y+1
-				z = z+1
-			content.columnconfigure(x,minsize=50)
-			x = x+1
-			
-			
-class tabularPageFrame(tk.Frame)
-	def __init__(self, master,name,options,civs,accessmatrix):
-		self.frame = tk.Frame.__init__(self, master,class_='standardPageFrame')
-		self.master = master
-		self.name = name
-		self.options = options
-		self.civs = civs
-		self.matrix = accessmatrix
-		self.createWidgets()
-	
-	def createWidgets(self):
-		label1 = tk.Label(self,text = self.name)
-		label1.grid()
-		
-		for y,c in enumerate(self.civs,1):
-			civlabel = tk.Label(self,text = c)
-			civlabel.grid(row=y,column=0)
-		
-		for x,sets in enumerate(self.options,1):
-			optlabel = tk.Label(self,text = sets[0])
-			optlabel.grid(row=0,column=x)
-			for y,c in enumerate(self.civs,1):
-				matrixmenu = tk.Menu(self,text="foo")
-				matrixmenu.title = tk.StringVar()
-				matrixmenu.configure(textvariable=control.title)
-				matrixmenu.title.set(sets[1][0])
-				matrixmenu.menu = tk.Menu(matrixmenu,tearoff=0)
-				matrixmenu['menu'] = matrixmenu.menu
-				matrixmenu.grid(row=y,column=x)
-				for z,choices in enumerate(sets[1]):
-					matrixmenu.menu.add_radiobutton(label=sets[1][z][8:],value=sets[1][z][8:],variable=matrixmenu.title)
+		for y,column in enumerate(self.content.getColumns()):
+			for x,modframe in enumerate(column.getModframes()):
+				makeframe = modFrame(self,modframe)
+				makeframe.configure(text=modframe.modname)
+				span = max([1,4//len(column.modframes)])
+				makeframe.grid(row=x*span+1,column=y,rowspan=span,ipadx=10,ipady=5,padx=5,pady=10,sticky=tk.N)
+				self.modframelist.append(makeframe)
 				
-				
+	def getSwitchVals(self):
+		for modframe in self.modframelist:
+			for value in modframe.getSwitchVals():
+				yield value
