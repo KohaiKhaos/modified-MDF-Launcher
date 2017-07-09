@@ -1,8 +1,8 @@
 #handshake.py
 #All functions and definitions directly relating to passing of information between the main launcher and the file editor are placed  here.
 
-import UI_structures
-import fileManager
+import UI_structures as gui
+from fileManager import Manage
 from multiprocessing import Process, Pipe
 
 
@@ -15,19 +15,32 @@ def compareValues(oldPage,newVals):
 			for column in mod.getColumns():
 				for switch in column.getSwitches():
 					data = switch.getData()
-					currentOld = str(data.values)
-					currentNew = str(next(newValues))
-					if currentOld == currentNew :
+					if data.type != "list":						
+						currentOld = str(data.values)
+						currentNew = str(next(newValues))
+						if currentOld == currentNew :
+							continue
+						else:
+							data.values = currentNew
+							print(data.name,data.values)
+							yield data
+
+def compareTableValues(oldTable,newVals):
+	newValues = iter(newVals)
+	for x,y,swi in oldTable.getSingleSwitch():
+		currentOld = str(swi.switches[0].values)
+		currentNew = str(next(newValues))
+		if currentOld == currentNew :
 						continue
-					else:
-						data.values = currentNew
-						yield data
-						
-						
+		else:
+			swi.switches[0].values = currentNew
+			curr = gui.standardFeatureSwitch.fromTablular(swi)
+			yield curr
+
 #Launches the file manager and gives it a useable pipe
 #Returns a pipe for use later
 def launchFileManager():
 	parent_conn, child_conn = Pipe()
-	FM = Process(target=fileManager.Manage, args=(child_conn,), daemon=True)
+	FM = Process(None,Manage,"File Manager", args=(child_conn,), daemon=True)
 	FM.start()
 	return parent_conn

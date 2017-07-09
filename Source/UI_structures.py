@@ -32,6 +32,7 @@ class standardFeatureSwitch:	#A multipurpose class that can be read in and out f
 										# 0 or any other value means that you cannot specify the file, and will need to seach all files for it
 		self.target = None				#The list of specific files or file prefixes specified for switchtype.
 	
+	
 	def parseSwitch(self,textlines):
 		self.name = textlines[0][:-1].strip()
 		self.type = textlines[1][:-1].strip()
@@ -46,30 +47,26 @@ class standardFeatureSwitch:	#A multipurpose class that can be read in and out f
 		self.switchtype = textlines[10][:-1].strip()
 		self.target = textlines[11][:-1].strip()
 		
-		
-#####	Option
-#Civ	Setting
-
-
-#Option gives: caption, half of name
-#Civ gives: target file, all menus work off of single-file targets
-#Setting gives: Value, prefixes, and controlstrings; if menu's value matches the switch's value
-		
-		
-	def convert_from_tabular(menutop,menuitem):
-		self.name = menutop.name
-		self.type = menutop.type
-		self.caption = menutop.caption
-		self.values = menutop.values + menuitem.trueValue
-		self.filetype = menutop.filetype
-		self.onPrefixes = menuitem.onPrefixes
-		self.offPrefixes = menuitem.offPrefixes
-		self.controlOnString = menuitem.controlOnString
-		self.controlOffString = menuitem.controlOffString
-		self.switchtype = menuitem.switchtype
-		self.target = menuitem.target
-		
-################################################################################
+	def fromTablular(tab):
+		foos = []
+		for switch in tab.switches:
+			foo = standardFeatureSwitch()
+			foo.name = tab.name
+			foo.type = tab.type
+			foo.caption = None
+			if switch.values == tab.switches[0].values:
+				foo.values = "1"
+			else:
+				foo.values = "0"
+			foo.filetype = "raw"
+			foo.onPrefixes = switch.onPrefixes
+			foo.offPrefixes = switch.offPrefixes
+			foo.controlOnString = switch.controlOnString
+			foo.controlOffString = switch.controlOffString
+			foo.numberpos = None
+			foo.switchtype = 2
+			foo.target = tab.file
+		return foos
 
 
 class InvalidConstruction(Exception):
@@ -186,21 +183,22 @@ class switchStandardGUI:
 
 class tabularStandardGUI:
 	class table:
-		def __init__(self):
+		def __init__(self,name=None):
+			self.name = name
 			self.toprow = []
 			self.leftcol = []
 			self.switchlist = []
 			
 		def addOption(self,label,type="bool",caption=None):
-			opt = tabularStandardGUI.option(label,type,caption)
-			self.toprow.append(opt)
+			self.toprow.append(None)
+			self.toprow[-1] = tabularStandardGUI.option(label,type,caption)
 			
 		def addCiv(self,label,file=None):
 			civ = tabularStandardGUI.civilization(label,file)
 			self.leftcol.append(civ)
 			
 		def addSwitch(self,textlines):
-			self.toprow[-1].addSwitch()
+			self.toprow[-1].addSwitch(textlines)
 			
 		def populate(self,matrixtext = None):
 			self.switchlist = []
@@ -211,18 +209,25 @@ class tabularStandardGUI:
 						swi = tabularStandardGUI.realSwitch(civ.label+option.label,option.type,option.switches,civ.file)
 						self.switchlist[-1].append(swi)
 			else:
+				print(matrixtext)
 				for y,civ in enumerate(self.leftcol):
-					words = matrixtext[y].split()
+					matrixtext[y] = matrixtext[y].strip()
+					words = matrixtext[y].split("|")
 					self.switchlist.append([])
-					for x,option in self.toprow:
-						word = words[x]
-						if word[0] == "~":
-							option.switch[0].values = word[1:]
-							option.switch[0].disabled = "1"
-						else
-							option.switch[0].values = word
-							option.switch[0].disabled = "0"
-						swi = tabularStandardGUI.realSwitch(civ.label+option.label,option.type,option.switch,civ.file)
+					for x,option in enumerate(self.toprow):
+						try:
+							word = words[x].strip()
+							print(word)
+							if word[0] == "~":
+								default = word[1:]
+								disabled = "1"
+							else:
+								default = word
+								disabled = "0"
+						except IndexError:
+							default = "0"
+							disabled = "1"
+						swi = tabularStandardGUI.realSwitch(civ.label+option.label,option.type,option.switches,civ.file,default,disabled)
 						self.switchlist[-1].append(swi)
 		
 		def showContents(self):
@@ -236,10 +241,20 @@ class tabularStandardGUI:
 					print(x.name,end="\t\t")
 				print("")
 		
+		def getRow(self):
+			for x in self.leftcol:
+				yield x
+			raise StopIteration
+		
+		def getColumn(self):
+			for x in self.toprow:
+				yield x
+			raise StopIteration
+		
 		def getSingleSwitch(self):
-			for row in self.switchlist:
-				for x,switch in enumerate(row)
-					yield toprow[x],switch
+			for y,row in enumerate(self.switchlist):
+				for x,switch in enumerate(row):
+					yield x,y,switch
 			raise StopIteration
 			
 	class option:
@@ -252,36 +267,38 @@ class tabularStandardGUI:
 		def addSwitch(self,textlines):
 			switch = tabularStandardGUI.tableSwitch(textlines)
 			if self.type == "bool":
-				self.switch = [switch]
+				self.switches = [switch]
 			else:
-				self.switch.append(switch)
-				
-	class tableSwitch:
-		def __init__(self,textlines):
-			try:
-			self.values = textlines[0].strip()
-			
-			self.onPrefixes = textlines[1].strip()
-			self.offPrefixes = textlines[2].strip()
-			
-			self.controlOnString = textlines[3].strip()
-			self.controlOffString = textlines[4].strip()
-			except IndexError:
-				pass
-			self.disabled = "0"
-			
+				self.switches.append(switch)
+
 	class civilization:
 		def __init__(self,label,file=None):
 			self.label = label
 			self.file = file	#What file to go to for this
+			
+	class tableSwitch:
+		def __init__(self,textlines):
+			try:
+				self.values = textlines[0].strip()
+				
+				self.onPrefixes = textlines[1].strip()
+				self.offPrefixes = textlines[2].strip()
+				
+				self.controlOnString = textlines[3].strip()
+				self.controlOffString = textlines[4].strip()
+			except IndexError:
+				pass
+			
+
 
 	class realSwitch:
-		def __init__(self,name,type,switches,file):
+		def __init__(self,name,type,switches,file,default,disabled):
 			self.name = name
 			self.type = type
 			self.switches = switches
 			self.file = file
-			
+			self.default = default
+			self.disabled = disabled
 
 
 

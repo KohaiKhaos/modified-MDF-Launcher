@@ -4,6 +4,7 @@ from time import sleep
 from cacheManager import hashManager as hashManager
 from cacheManager import cacheManager as cacheManager
 from cacheManager import NoCache,NoHash,WrongHash
+from logger import log02
 import hashlib, os, operator, string, re
 
 
@@ -19,19 +20,19 @@ HACK_FOLDER = None
 HACK_FILES = []
 
 def Manage(pipe):
+	log02.info("Waiting for jobs")
 	jobs = []
 	while True:
 		rawjobs = []
 		hackjobs = []
 		initjobs = []
 		if pipe.poll(None):					#Poll the pipe, wait for something to arrive
-			sleep(1)					#If there is, wait a second to let more in
+			sleep(1)						#If there is, wait a second to let more in
 			while pipe.poll():				#Now keep grabbing stuff till it's empty
 				jobs.append(pipe.recv())	#Get an object from the launcher, woot woot, gotta see what it is next
 		for job in jobs:
 			if type(job) == standardFeatureSwitch:	#It's a switch, time to edit files
 				if job.filetype == "raw":
-					print("Making a raw job")
 					rawjobs.append(job)
 				if job.filetype == "hack":
 					hackjobs.append(job)
@@ -40,7 +41,7 @@ def Manage(pipe):
 			if type(job) == str:					#It's an order, let's do what it says
 				pass
 				if job == "startup":
-					print("Starting up file manager bois")
+					log02.info("Starting up file manager, settings things up")
 					cachedfiles = []
 					with os.scandir(RAWS_FOLDER) as dir:
 						for file in dir:
@@ -48,15 +49,17 @@ def Manage(pipe):
 								cachedfiles.append(RAWS_FOLDER + file.name)
 					cachedfiles.extend(INIT_FILES)
 					if not os.access(HASHFILE,os.F_OK) or not os.access(CACHEFILE,os.F_OK):
-						print("Building a hash")
+						log02.warning("There's no hash file set up; creating a new one from scratch")
 						hashManager.hashAllFiles(cachedfiles,HASHFILE)					
 					if not os.access(CACHEFILE,os.F_OK):
-						print("Building a cache")
+						log02.warning("There's no cache file set up; creating a new one from scratch")
 						cacheManager.cacheAllFiles(cachedfiles,CACHEFILE)
 				if job == "shutdown":
+					log02.info("Shutting down file manager, running the last pass through.")
 					rawManager.manage(rawjobs)
 					hackManager.manage(hackjobs)
 					initManager.manage(initjobs)
+					log02.info("Last jobs done, sending clear and exiting")
 					pipe.send("Cleared")
 					pipe.close()
 					multiprocessing.terminate()
@@ -69,14 +72,18 @@ def Manage(pipe):
 def checkHashCache(filename):
 	try:
 		try:
+			log02.debug("Comparing the hash for %s",filename)
 			hashManager.hashFileCompare(filename,HASHFILE)
 		except NoHash: #Raised if there is no hash for this file
+			log02.warning("No hash found for %s, creating one",filename)
 			hashManager.hashFileWrite(filename,HASHFILE)
 		except WrongHash: #Raised if the hashes are inconsistent
+			log02.warning("Hash for %s is incorrect, replacing it and recaching it",filename)
 			cache = cacheManager.cacheReplace(filename,CACHEFILE)
 		cache = cacheManager.cacheFileGet(filename,CACHEFILE)
 	except NoCache: #Raised if there is no cache for this file
 		cache = cacheManager.cacheFile(filename,CACHEFILE)
+		log02.warning("No cache found for %s, creating one",filename)
 	return cache
 		
 
@@ -91,6 +98,7 @@ class rawManager:
 #													It is also slower to run, so it should not be used senselessly
 
 	def manage(switches):
+		log02.info("Managing a bunch of raw edits")
 		if switches != []:
 			dir = os.scandir(RAWS_FOLDER)
 			for file in dir:
@@ -98,6 +106,7 @@ class rawManager:
 					fp = open(RAWS_FOLDER + file.name,"r+",1)
 					cache = checkHashCache(RAWS_FOLDER + file.name) #Check integrity of the cache and  hash on this file
 					for switch in switches:
+						log02.debug("Performing edits for %s", switch.name.strip())
 						type = switch.type.strip()
 						if type[0].isdigit():		#Value replacement
 							rawManager.numberReplace(fp,cache,switch)
@@ -121,7 +130,7 @@ class rawManager:
 						text = text.translate(TOO_MANY_FALSES)
 					else:
 						text = list(text.partition("["))
-						if text[1] != ""
+						if text[1] != "":
 							text[1] = "!"
 						text = text[0] + text[1] + text[2]
 					fp.seek(p,0)
@@ -141,7 +150,7 @@ class rawManager:
 						text = text.translate(TOO_MANY_FALSES)
 					else:
 						text = list(text.partition("["))
-						if text[1] != ""
+						if text[1] != "":
 							text[1] = "!"
 						text = text[0] + text[1] + text[2]
 					fp.write(text)
@@ -158,12 +167,12 @@ class rawManager:
 					text = fp.readline()
 					if switch.values == "1":
 						text = list(text.partition(switch.controlOffString))
-						if text[1] != ""
+						if text[1] != "":
 							text[1] = switch.controlOnString
 						text = text[0] + text[1] + text[2]
 					else:
 						text = list(text.partition(switch.controlOnString))
-						if text[1] != ""
+						if text[1] != "":
 							text[1] = switch.controlOffString
 						text = text[0] + text[1] + text[2]
 					fp.write(text)
@@ -178,12 +187,12 @@ class rawManager:
 					text = fp.readline()
 					if switch.values == "0":
 						text = list(text.partition(switch.controlOffString))
-						if text[1] != ""
+						if text[1] != "":
 							text[1] = switch.controlOnString
 						text = text[0] + text[1] + text[2]
 					else:
 						text = list(text.partition(switch.controlOnString))
-						if text[1] != ""
+						if text[1] != "":
 							text[1] = switch.controlOffString
 						text = text[0] + text[1] + text[2]
 					fp.write(text)
@@ -199,12 +208,12 @@ class rawManager:
 					text = content[ln]
 					if switch.values == "1":
 						text = list(text.partition(switch.controlOffString))
-						if text[1] != ""
+						if text[1] != "":
 							text[1] = switch.controlOnString
 						text = text[0] + text[1] + text[2]
 					else:
 						text = list(text.partition(switch.controlOnString))
-						if text[1] != ""
+						if text[1] != "":
 							text[1] = switch.controlOffString
 						text = text[0] + text[1] + text[2]
 					content[ln] = text
@@ -218,12 +227,12 @@ class rawManager:
 					text = content[ln]
 					if switch.values == "0":
 						text = list(text.partition(switch.controlOffString))
-						if text[1] != ""
+						if text[1] != "":
 							text[1] = switch.controlOnString
 						text = text[0] + text[1] + text[2]
 					else:
 						text = list(text.partition(switch.controlOnString))
-						if text[1] != ""
+						if text[1] != "":
 							text[1] = switch.controlOffString
 						text = text[0] + text[1] + text[2]
 					content[ln] = text
@@ -251,7 +260,7 @@ class rawManager:
 					fp.seek(p,0)
 					txt[switch.numberpos*2-1] = switch.values
 					text = ""
-					for t in txt
+					for t in txt:
 						text += t
 					fp.write(text)
 				else:  #We have a problem and need to now load in the entire file to do this write
@@ -261,7 +270,7 @@ class rawManager:
 						txt = re.split(r'(\d+)', text)	#Split text around numbers
 						txt[switch.numberpos*2-1] = switch.values
 						text = ""
-						for t in txt
+						for t in txt:
 							text += t
 						content[ln] = text
 					fp.seek(0)
@@ -270,6 +279,7 @@ class rawManager:
 			
 class initManager(rawManager):
 	def manage(switches):
+		log02.info("Managing a bunch of init edits")
 		if switches != []:
 			dir =  os.scandir(INIT_FOLDER)
 			for file in dir:
@@ -278,6 +288,7 @@ class initManager(rawManager):
 						fp = open(file.name,"r+",1)
 						cache = checkHashCache(file) #Check integrity of the cache and  hash on this file
 						for switch in switches:
+							log02.debug("Performing edits for %s", switch.name.strip())
 							if switch.type[0].isdigit:		#Value replacement
 								initManager.numberReplace(fp,cache,switch)
 							elif switch.controlOnString is "":
@@ -294,6 +305,7 @@ class initManager(rawManager):
 
 class hackManager:
 	def manage(switches):
+		log02.info("Managing a bunch of DFhack edits")
 		if switches != []:
 			dir = os.scandir(HACK_FOLDER)
 			for file in dir:
@@ -301,6 +313,7 @@ class hackManager:
 				if file.name in HACK_FILES:
 					fp = open(file.name,"r+",1)
 					for switch in switches:
+						log02.debug("Performing edits for %s", switch.name.strip())
 						if switch.type[0].isdigit:		#Value replacement
 							hackManager.numberReplace(fp,switch)
 						else:

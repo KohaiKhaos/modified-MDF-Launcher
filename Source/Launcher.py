@@ -1,8 +1,8 @@
 import tkinter as tk
 import ttk
-import multiprocessing, atexit
+import multiprocessing, atexit, logging
 import mainContent, configuration, handshake
-
+from logger import log01
 
 
 BACKGROUND_COLOR = "#000"
@@ -34,22 +34,26 @@ class Application(tk.Frame):
 
 		
 		#Top row
+		log01.debug("Building the top row")
 		self.HeaderSet = tk.IntVar()
 		
 		self.HeaderTabs = HeaderTabs(self)
 		self.HeaderTabs.grid(column=0,row=0,sticky=tk.NSEW,pady=5,padx=10)
 		
 		#Top bar, just below the top buttons
+		log01.debug("Building the second row")
 		self.HeaderContent = HeaderContent(self)
 		self.HeaderContent.grid(column=0,row=1,sticky=tk.NSEW,pady=5,padx=10)
 		
 		#Second row, just below top bar
+		log01.debug("Building the third row")
 		self.MainSet = tk.IntVar()
 		
 		self.MainRow = MainRow(self)
 		self.MainRow.grid(column=0,row=2,sticky=tk.NSEW,pady=5,padx=10)
 		
 		#Main content
+		log01.debug("Building the main content")
 		self.Main = MainFrame(self)
 		self.Main.grid(column=0,row=3,sticky=tk.NSEW,padx=10)
 		
@@ -102,10 +106,13 @@ class HeaderContent(tk.Frame):
 		self.util.grid_remove()
 		self.prof.grid_remove()
 		if self.master.HeaderSet.get() == 0 :
+			log01.debug("Second Row: Drawing MDF launcher options")
 			self.mdf.grid(column=0,row=0,sticky=tk.NW)
 		elif self.master.HeaderSet.get() == 1 :
+			log01.debug("Second Row: Drawing utility launchers")
 			self.util.grid(column=0,row=0,sticky=tk.NW)
 		elif self.master.HeaderSet.get() == 2 :
+			log01.debug("Second Row: Drawing profile options")
 			self.prof.grid(column=0,row=0,sticky=tk.NW)
 
 
@@ -162,27 +169,43 @@ class MainFrame(tk.Frame):
 	def createWidgets(self):
 		try:
 			self.config = []
-			fp = open(configuration.PICKLE_CONFIG,"rb")
 			for page in configuration.loadConfig():
 				self.config.append(page)
 		except IOError:
 			self.config = configuration.standardConfigParse(self)
+			
+		try:
+			self.tableconf = []
+			for page in configuration.loadTableConf():
+				self.tableconf.append(page)
+		except IOError:
+			self.tableconf = configuration.tabularConfigParse()
 		
-		settingsContent = self.config[0]
+		initContent = self.config[0]
+		self.init = mainContent.standardPageFrame(self,initContent)
+		self.init.grid()
+		
+		settingsContent = self.config[1]
 		self.settings = mainContent.standardPageFrame(self,settingsContent)
 		self.settings.grid()
+		self.settings.grid_remove()
 		
-		modContent = self.config[1]
+		modContent = self.config[2]
 		self.mods = mainContent.standardPageFrame(self,modContent)
 		self.mods.grid()
 		self.mods.grid_remove()
 		
-		creatureContent = self.config[2]
+		civContent = self.tableconf[0]
+		self.civs = mainContent.standardTabularFrame(self,civContent)
+		self.civs.grid()
+		self.civs.grid_remove()
+		
+		creatureContent = self.config[3]
 		self.creatures = mainContent.standardPageFrame(self,creatureContent)
 		self.creatures.grid()
 		self.creatures.grid_remove()
 		
-		dwarfContent = self.config[3]
+		dwarfContent = self.config[4]
 		self.dwarf = mainContent.standardPageFrame(self,dwarfContent)
 		self.dwarf.grid()
 		self.dwarf.grid_remove()
@@ -191,36 +214,60 @@ class MainFrame(tk.Frame):
 		self.master.MainSet.trace("w",self.redraw)		
 	
 	def redraw(self,a,b,c):
+		self.init.grid_remove()
 		self.settings.grid_remove()
 		self.mods.grid_remove()
+		self.civs.grid_remove()
 		self.creatures.grid_remove()
 		self.dwarf.grid_remove()
+		if self.master.MainSet.get() == 0 :
+			log01.debug("Main: Drawing init options")
+			self.init.grid()
 		if self.master.MainSet.get() == 1 :
+			log01.debug("Main: Drawing settings options")
 			self.settings.grid()
 		if self.master.MainSet.get() == 2 :
+			log01.debug("Main: Drawing mod options")
 			self.mods.grid()
+		if self.master.MainSet.get() == 3 :
+			log01.debug("Main: Drawing civ options")
+			self.civs.grid()
 		if self.master.MainSet.get() == 5 :
+			log01.debug("Main: Drawing creature options")
 			self.creatures.grid()
 		if self.master.MainSet.get() == 6 :
+			log01.debug("Main: Drawing dwarf options")
 			self.dwarf.grid()
 		self.file_save()
 
 		
 	def exitStateMents(self):
-		print("Saving state")
+		log01.warning("Saving before exiting")
 		
 	def file_save(self):
 		#Save all edits before you close silly
-		print("Saving everything")
+		log01.info("Applying all edits")
+		vals = []
+		for value in self.init.getSwitchVals():
+			vals.append(value)
+		for diffs in handshake.compareValues(self.config[0],vals):
+			parent_pipe.send(diffs)
+
 		vals = []
 		for value in self.settings.getSwitchVals():
 			vals.append(value)
-		for diffs in handshake.compareValues(self.config[0],vals):
-			print(diffs)
+		for diffs in handshake.compareValues(self.config[1],vals):
 			parent_pipe.send(diffs)
+		vals = []
+#		for value in self.civs.getSwitchVals():
+#			vals.append(value)
+#		for diffs in handshake.compareTableValues(self.tableconf[0],vals):
+#			print(diffs)
 			
 	def config_save(self):
+		log01.info("Saving configs to file")
 		configuration.saveConfigs(self.config)
+		configuration.saveTableConf(self.tableconf)
 
 
 ###############################################################################
@@ -239,15 +286,22 @@ if __name__ == '__main__':
 	def getClear():
 		parent_pipe.send("shutdown")
 		parent_pipe.recv()
-	
+		
+	log01.warning("Starting up")
+	log01.debug("Initializing file manager")
 	multiprocessing.freeze_support()
 	parent_pipe = handshake.launchFileManager()
+	parent_pipe.send("startup")
+	
+	log01.debug("Initializing exit handler")
 	atexit.register(exit_handler)
 	atexit.register(getClear)
-	parent_pipe.send("startup")
+	
+	log01.info("Initializing launcher window")
 	app = Application()
 	app.master.title('Masterwork Dwarf Fortress')
 	app.mainloop()
+	log01.warning("Shutting down")
 	
 
 	

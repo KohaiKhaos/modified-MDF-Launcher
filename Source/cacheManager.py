@@ -203,14 +203,12 @@ class hashManager:
 					break
 			except EOFError:
 				file.close()
-				print("File not found")
 				raise NoHash
 		file.close()
 		currHash = hashManager.hashlist(filename,hashManager.hashGet(filename))
 		if recHash.hash == currHash.hash:
-			return 1
+			return True
 		else:
-			print(filename, "\nWrong hash: ",recHash.hash,"\nWith: ",currHash.hash)
 			hashManager.hashReplace(currHash,hashes)
 			raise WrongHash
 			

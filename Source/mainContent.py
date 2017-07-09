@@ -20,7 +20,7 @@ class modFrame(tk.LabelFrame):
 		for x,column in enumerate(self.content.getColumns()):
 			for y,switch in enumerate(column.getSwitches()):
 				swinfo = switch.getData()
-				varname = self.content.modname + "_" + swinfo.name
+				#varname = self.content.modname + "_" + swinfo.name
 				if swinfo.type == "bool":
 					control = tk.Checkbutton(self,text=swinfo.name)
 					control.var = tk.IntVar()
@@ -57,20 +57,19 @@ class modFrame(tk.LabelFrame):
 					#control = tk.Menubutton(self)
 					label = tk.Label(self,text=swinfo.name)
 					control = ttk.Combobox(self)
-					control.var = tk.StringVar()
-					control.configure(state='readonly',textvariable = control.var)
+					control.display = tk.StringVar()
+					control.configure(state='readonly',textvariable = control.display)
 					control.bind('<<ComboboxSelected>>', control.select_clear())
 					control['values'] = []
 					label.grid(row=y,column=x,padx=10,sticky=tk.W)
 					control.grid(row=y,column=x+1,sticky=tk.W)
 					
-					
 				elif swinfo.type == "listitem":
-					currlist = []
-					for vals in control['values']:
-						currlist.append(vals)
+					currlist = list(control['values'])
 					currlist.append(swinfo.name)
 					control['values'] = currlist
+					control.values = control['values']
+					print(swinfo.values)
 					if swinfo.values == "1":
 						try:
 							control.current(len(currlist)-1)
@@ -79,12 +78,20 @@ class modFrame(tk.LabelFrame):
 				
 				if not swinfo.type == "listitem":
 					self.switchlist.append(control)
+
 				
 	def getSwitchVals(self):
 		for switch in self.switchlist:
-			yield(switch.var.get())
-			
-				
+			if type(switch) != ttk.Combobox:
+				yield switch.var.get()
+			else:
+				for choice in switch.values:
+					if choice == switch.display.get():
+						yield "1"
+					else:
+						yield "0"
+		raise StopIteration
+
 class standardPageFrame(tk.Frame):
 	def __init__(self, master, content):
 		self.frame = tk.Frame.__init__(self, master, class_='standardPageFrame')
@@ -96,7 +103,6 @@ class standardPageFrame(tk.Frame):
 	def createWidgets(self):
 		label1 = tk.Label(self,text = self.content.name)
 		label1.grid()
-		x = 0
 		z = 0
 		for y,column in enumerate(self.content.getColumns()):
 			for x,modframe in enumerate(column.getModframes()):
@@ -110,3 +116,84 @@ class standardPageFrame(tk.Frame):
 		for modframe in self.modframelist:
 			for value in modframe.getSwitchVals():
 				yield value
+
+				
+				
+				
+				
+def tableSwitch(self,swi):		#Reminder, realSwitch is the top-level button
+	control = None				#It contains a list of the switches it messes with, a 1-member bool or a multi-member menu
+	if swi.type == "bool":	#Only one switch in swi.switches
+		control = tk.Checkbutton(self)
+		control.var = tk.IntVar()
+		control.configure(variable=control.var)
+		control.configure(selectcolor=defaultSelectColor,activebackground=defaultActiveBackground)
+		if swi.default == "1":
+			control.select()
+		if swi.default == "0":
+			control:deselect()
+	elif swi.type == "list":	#Multiple members in swi.switches
+		control = ttk.Combobox(self)
+		control.var = tk.StringVar()
+		control.configure(state='readonly',textvariable = control.var)
+		control.bind('<<ComboboxSelected>>', control.select_clear())
+		control['values'] = []
+		for opt in swi.switches :
+			currlist = list(control['values'])
+			currlist.append(opt.values)
+			control['values'] = currlist
+			control.values = control['values']
+			if opt.values == swi.default:
+				try:
+					control.current(len(currlist)-1)
+				except tk.TclError:
+					pass
+	if swi.disabled == "1":
+		control.configure(state=tk.DISABLED)
+	return control
+				
+class standardTabularFrame(tk.Frame):
+	def __init__(self, master, table):
+		self.frame = tk.Frame.__init__(self, master, class_='standardPageFrame')
+		self.master = master
+		self.table = table
+		self.switchlist = []
+		self.createWidgets()
+	
+	def createWidgets(self):
+		label1 = tk.Label(self,text = self.table.name)
+		label1.grid()
+		for y,columnhead in enumerate(self.table.getColumn()):
+			label = tk.Label(self,text=columnhead.label)
+			label.grid(row=0,column=y+1)
+			
+		for x,rowhead in enumerate(self.table.getRow()):
+			label = tk.Label(self,text=rowhead.label)
+			label.grid(row=x+1,column=0)
+			
+		for x,y,switch in self.table.getSingleSwitch():
+			try:
+				makeswitch = tableSwitch(self,switch)
+				makeswitch.grid(row=y+1,column=x+1,ipadx=0,ipady=0,padx=5,pady=5,sticky=tk.N)
+				self.switchlist.append(makeswitch)
+			except AttributeError:
+				pass
+				
+	def getSwitchVals(self):
+		for switch in self.switchlist:
+			if type(switch) != ttk.Combobox:
+				yield switch.var.get()
+			else:
+				for choice in switch.values:
+					if choice == switch.display.get():
+						yield "1"
+					else:
+						yield "0"
+		raise StopIteration
+	
+
+	
+	
+	
+	
+	
