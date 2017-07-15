@@ -1,8 +1,12 @@
 import tkinter as tk
-import ttk
-import multiprocessing, atexit, logging
-import mainContent, configuration, handshake
-from logger import log01
+from tkinter import ttk
+from PIL import Image
+from PIL import ImageTk
+
+import multiprocessing, atexit, logging			#Official modules	
+import headerContent as header
+import mainContent, configuration, handshake	#Project modules
+from logger import log01						#Logger
 
 
 BACKGROUND_COLOR = "#000"
@@ -57,7 +61,6 @@ class Application(tk.Frame):
 		self.Main = MainFrame(self)
 		self.Main.grid(column=0,row=3,sticky=tk.NSEW,padx=10)
 		
-
 ###############################################################################
 
 
@@ -73,13 +76,22 @@ class HeaderTabs(tk.Frame):
 		self.columnconfigure(1,minsize=50)
 		self.columnconfigure(2,minsize=50)
 		
-		buttonlist = ["MDF","Utilities","Profiles"]
-		x=0
-		for name in buttonlist :
-			self.button = tk.Radiobutton(self,text=name,value=x,variable=self.master.HeaderSet,indicatoron=0,selectcolor=BACKGROUND_COLOR)
+		self.buttonlist = ["MDF","Utilities","Profiles"]
+		for x,name in enumerate(self.buttonlist,0) :
+			#self.button = tk.Radiobutton(self,text=name,value=x,variable=self.master.HeaderSet,indicatoron=0,selectcolor=BACKGROUND_COLOR)
+			self.button = tk.Button(self,text=name,command=lambda a=x: self.redrawButtons(a))
 			self.button.grid(column=x,row=0,sticky=tk.NW,padx=10,ipadx=5)
-			x = x+1
+			self.buttonlist[x] = self.button
 			
+		
+		
+	def redrawButtons(self,x):
+		for b in self.buttonlist:
+			b.configure(relief="raised")
+		self.buttonlist[x].configure(relief="sunken")
+		self.master.HeaderSet.set(x)
+
+		
 ###############################################################################
 		
 class HeaderContent(tk.Frame):
@@ -92,9 +104,9 @@ class HeaderContent(tk.Frame):
 	def createWidgets(self)	:
 		self.columnconfigure(0,minsize=50)
 		self.rowconfigure(0,minsize=50)
-		self.mdf = mdfBar(self)
-		self.util = utilitiesBar(self)
-		self.prof = profilesBar(self)
+		self.mdf = header.mdfBar(self)
+		self.util = header.utilitiesBar(self)
+		self.prof = header.profilesBar(self)
 		
 		self.mdf.grid(column=0,row=0,sticky=tk.NW)
 		
@@ -115,24 +127,6 @@ class HeaderContent(tk.Frame):
 			log01.debug("Second Row: Drawing profile options")
 			self.prof.grid(column=0,row=0,sticky=tk.NW)
 
-
-class mdfBar(tk.Frame):
-	def __init__(self, master=None):
-		self.frame = tk.Frame.__init__(self, master,class_='mdfBar')
-		self.text = tk.Label(self,text="MDF stuff")
-		self.text.grid()
-
-class utilitiesBar(tk.Frame):
-	def __init__(self, master=None):
-		self.frame = tk.Frame.__init__(self, master,class_='utilitiesBar')
-		self.text = tk.Label(self,text="Utilities stuff")
-		self.text.grid()
-
-class profilesBar(tk.Frame):
-	def __init__(self, master=None):
-		self.frame = tk.Frame.__init__(self, master,class_='profilesBar')
-		self.text = tk.Label(self,text="Profiles stuff")
-		self.text.grid()
 		
 ###############################################################################
 		
@@ -146,13 +140,18 @@ class MainRow(tk.Frame):
 		for x in range(0,9):
 			self.columnconfigure(x,minsize=50)
 			
-		buttonlist = ["Init","Settings","Mods","Civs","Invaders","Creatures","Dwarf","Kobold","Orc","Worldgen"]
-		x=0
-		for name in buttonlist :
-			self.button = tk.Radiobutton(self,text=name,value=x,variable=self.master.MainSet,indicatoron=0,selectcolor=BACKGROUND_COLOR)
+		self.buttonlist = ["Init","Settings","Mods","Civs","Invaders","Creatures","Dwarf","Kobold","Orc","Worldgen"]
+		for x,name in enumerate(self.buttonlist) :
+			#self.button = tk.Radiobutton(self,text=name,value=x,variable=self.master.MainSet,indicatoron=0,selectcolor=BACKGROUND_COLOR)
+			self.button = tk.Button(self,text=name,command=lambda a=x: self.redrawButtons(a))
 			self.button.grid(column=x,row=0,sticky=tk.NW,padx=10,ipadx=5)
-			x = x+1
-
+			self.buttonlist[x] = self.button
+			
+	def redrawButtons(self,x):
+		for b in self.buttonlist:
+			b.configure(relief="raised")
+		self.buttonlist[x].configure(relief="sunken")
+		self.master.MainSet.set(x)
 
 ###############################################################################
 
@@ -167,19 +166,22 @@ class MainFrame(tk.Frame):
 		atexit.register(self.exitStateMents)
 	
 	def createWidgets(self):
+		log01.debug("Loading main config options")
 		try:
 			self.config = []
 			for page in configuration.loadConfig():
 				self.config.append(page)
 		except IOError:
-			self.config = configuration.standardConfigParse(self)
+			#self.config = configuration.standardConfigParse(self)
+			self.config = configuration.standardXMLParse()
 			
 		try:
 			self.tableconf = []
 			for page in configuration.loadTableConf():
 				self.tableconf.append(page)
 		except IOError:
-			self.tableconf = configuration.tabularConfigParse()
+			#self.tableconf = configuration.tabularConfigParse()
+			self.tableconf = configuration.tabularXMLParse()
 		
 		initContent = self.config[0]
 		self.init = mainContent.standardPageFrame(self,initContent)
@@ -266,7 +268,7 @@ class MainFrame(tk.Frame):
 			
 	def config_save(self):
 		log01.info("Saving configs to file")
-		configuration.saveConfigs(self.config)
+		#configuration.saveConfigs(self.config)
 		configuration.saveTableConf(self.tableconf)
 
 

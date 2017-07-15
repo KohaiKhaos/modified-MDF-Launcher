@@ -47,6 +47,20 @@ class standardFeatureSwitch:	#A multipurpose class that can be read in and out f
 		self.switchtype = textlines[10][:-1].strip()
 		self.target = textlines[11][:-1].strip()
 		
+	def dictSwitch(self,dictionary):
+		self.name = dictionary.get("Name")
+		self.type = dictionary.get("Type")
+		self.caption = dictionary.get("Caption")
+		self.values = dictionary.get("Value")
+		self.filetype = dictionary.get("Filetype")
+		self.onPrefixes = dictionary.get("TagOn")
+		self.offPrefixes = dictionary.get("TagOff")
+		self.controlOnString = dictionary.get("ControlOn")
+		self.controlOffString = dictionary.get("ControlOff")
+		self.numberpos = dictionary.get("TargetNum")
+		self.switchtype = dictionary.get("Switch")
+		self.target = dictionary.get("Target")
+		
 	def fromTablular(tab):
 		foos = []
 		for switch in tab.switches:
@@ -197,8 +211,8 @@ class tabularStandardGUI:
 			civ = tabularStandardGUI.civilization(label,file)
 			self.leftcol.append(civ)
 			
-		def addSwitch(self,textlines):
-			self.toprow[-1].addSwitch(textlines)
+		def addSwitch(self,dictionary):
+			self.toprow[-1].addSwitch(dictionary)
 			
 		def populate(self,matrixtext = None):
 			self.switchlist = []
@@ -264,8 +278,8 @@ class tabularStandardGUI:
 			self.type = type	#What type of option it is; bool or list
 			self.switches = []	#bool means a single switch, list is a list of switches from which a Combobox is built
 			
-		def addSwitch(self,textlines):
-			switch = tabularStandardGUI.tableSwitch(textlines)
+		def addSwitch(self,dictionary):
+			switch = tabularStandardGUI.tableSwitch(dictionary)
 			if self.type == "bool":
 				self.switches = [switch]
 			else:
@@ -277,17 +291,12 @@ class tabularStandardGUI:
 			self.file = file	#What file to go to for this
 			
 	class tableSwitch:
-		def __init__(self,textlines):
-			try:
-				self.values = textlines[0].strip()
-				
-				self.onPrefixes = textlines[1].strip()
-				self.offPrefixes = textlines[2].strip()
-				
-				self.controlOnString = textlines[3].strip()
-				self.controlOffString = textlines[4].strip()
-			except IndexError:
-				pass
+		def __init__(self,dictionary):
+			self.values = dictionary.get("Value")
+			self.onPrefixes = dictionary.get("TagOn")
+			self.offPrefixes = dictionary.get("TagOff")
+			self.controlOnString = dictionary.get("ControlOn")
+			self.controlOffString = dictionary.get("ControlOff")
 			
 
 

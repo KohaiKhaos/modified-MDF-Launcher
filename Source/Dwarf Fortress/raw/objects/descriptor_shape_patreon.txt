@@ -1,0 +1,25 @@
+descriptor_shape_patreon
+
+YES_PATREON_REWARDS[OBJECT:DESCRIPTOR_SHAPE]
+
+[SHAPE:PATRON]
+	[NAME:patron of progress and prosperity]
+	[WORD:PATRON]
+	[ADJ:Rekov the]
+	[ADJ:Tirionis the]
+	[ADJ:Sami the]
+	[ADJ:Primoz the]
+	[ADJ:Gauldarck the]
+	[ADJ:Jenniffer the]
+	[ADJ:Jakob the]
+	[ADJ:Colin the]
+	[ADJ:Adam the]
+	[ADJ:Mr. Puffers]
+	[TILE:'*']
+
+#### EOF - THIS LINE IS 80 CHARACTERS LONG #####50########60########70########80
+5
+4
+3
+2
+1

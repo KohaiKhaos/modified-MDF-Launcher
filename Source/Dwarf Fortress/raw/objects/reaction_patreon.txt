@@ -1,0 +1,92 @@
+reaction_patreon
+
+
+YES_PATREON_REWARDS[OBJECT:REACTION]
+
+[REACTION:ANTI_MECHANISM]
+[NAME:Assemble the antikythera mechanism]
+	[DESCRIPTION:Uses 30 bronze mechanisms to create the antikythera mechanism, a build-mat needed for the orrery.]
+	[DESCRIPTION:]
+	[DESCRIPTION:Uses mechanics skill.]
+[BUILDING:CRAFTSMAN:CUSTOM_A]
+[REAGENT:A:30:TRAPPARTS:NONE:INORGANIC:BRONZE]
+[PRODUCT:100:1:TOOL:ITEM_TOOL_ANTI:INORGANIC:BRONZE]
+[SKILL:MECHANICS]
+
+[REACTION:MAKE_SMOKE_PIPE]
+[NAME:Make churchwarden pipe]
+	[DESCRIPTION:Requires a log. Creates a pipe for smoking pipeweed.]
+	[DESCRIPTION:]
+	[DESCRIPTION:Uses carpentry skill.]
+[BUILDING:CRAFTSMAN:NONE]
+[REAGENT:A:1:WOOD:NONE:NONE:NONE]
+[PRODUCT:100:1:TOOL:ITEM_TOOL_PIPE:NONE:GET_MATERIAL_FROM_REAGENT:A:NONE]
+[SKILL:WOODCRAFT]
+
+[REACTION:SMOKE_PIPE_DEEP]
+[NAME:Smoke deep galena pipeweed]
+	[DESCRIPTION:Requires a pipe and a bag of deep galena leaves. Gives positive thoughts to the worker.]
+	[DESCRIPTION:]
+	[DESCRIPTION:Uses any skill.]
+[REAGENT:pipeweed:1:PLANT_GROWTH:LEAVES:PLANT_MAT:DEEP_GALENA:LEAF][REACTION_CLASS:IS_LEAF]
+[REAGENT:bag:1:NONE:NONE:NONE:NONE][CONTAINS:pipeweed][PRESERVE_REAGENT]
+[REAGENT:churchwarden pipe:1:TOOL:ITEM_TOOL_PIPE:NONE:NONE][PRESERVE_REAGENT]
+[BUILDING:KITCHEN:CUSTOM_CTRL_D]
+[BUILDING:STILL:CUSTOM_CTRL_D]
+
+[REACTION:SMOKE_PIPE_SWEET]
+[NAME:Smoke sweet galena pipeweed]
+	[DESCRIPTION:Requires a pipe and a bag of sweet galena leaves. Gives positive thoughts to the worker.]
+	[DESCRIPTION:]
+	[DESCRIPTION:Uses any skill.]
+[REAGENT:pipeweed:1:PLANT_GROWTH:LEAVES:PLANT_MAT:SWEET_GALENA:LEAF][REACTION_CLASS:IS_LEAF]
+[REAGENT:bag:1:NONE:NONE:NONE:NONE][CONTAINS:pipeweed][PRESERVE_REAGENT]
+[REAGENT:churchwarden pipe:1:TOOL:ITEM_TOOL_PIPE:NONE:NONE][PRESERVE_REAGENT]
+[BUILDING:KITCHEN:CUSTOM_CTRL_S]
+[BUILDING:STILL:CUSTOM_CTRL_S]
+
+[REACTION:PLANTS_DWARF]
+[PRODUCT:100:1:PLANT:NONE:PLANT_MAT:DEEP_GALENA:STRUCTURAL]
+[PRODUCT:100:1:PLANT:NONE:PLANT_MAT:DEEP_GALENA:SEED]
+
+[REACTION:ORRERY_HELP]
+	[NAME:*Controls Calender Speed*]
+	[BUILDING:ORRERY:CUSTOM_NONE]
+	
+[REACTION:ORRERY_SLOWEST]
+	[NAME:The days seem to crawl]
+	[DESCRIPTION:Sets time to 1/4x speed. The setting resets once you load a save.]
+	[DESCRIPTION:]
+	[DESCRIPTION:Uses any skill.]
+	[BUILDING:ORRERY:CUSTOM_A]TIMESTREAM_4
+[REACTION:ORRERY_SLOW]
+	[NAME:The days seem to go slowly]
+	[DESCRIPTION:Sets time to 1/2x speed. The setting resets once you load a save.]
+	[DESCRIPTION:]
+	[DESCRIPTION:Uses any skill.]
+	[BUILDING:ORRERY:CUSTOM_B]TIMESTREAM_2
+[REACTION:ORRERY_NORMAL]
+	[NAME:The days seem to go normal]
+	[DESCRIPTION:Sets time to normal speed. The setting resets once you load a save.]
+	[DESCRIPTION:]
+	[DESCRIPTION:Uses any skill.]
+	[BUILDING:ORRERY:CUSTOM_C]TIMESTREAM_1
+[REACTION:ORRERY_FAST]
+	[NAME:The days seem to go by quickly]
+	[DESCRIPTION:Sets time to 2x speed. The setting resets once you load a save.]
+	[DESCRIPTION:]
+	[DESCRIPTION:Uses any skill.]
+	[BUILDING:ORRERY:CUSTOM_D]TIMESTREAM_2X
+[REACTION:ORRERY_FASTEST]
+	[NAME:The days seem to fly by]
+	[DESCRIPTION:Sets time to 4x speed. The setting resets once you load a save.]
+	[DESCRIPTION:]
+	[DESCRIPTION:Uses any skill.]
+	[BUILDING:ORRERY:CUSTOM_E]TIMESTREAM_4X
+
+#### EOF - THIS LINE IS 80 CHARACTERS LONG #####50########60########70########80
+5
+4
+3
+2
+1

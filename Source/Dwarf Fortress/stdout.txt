@@ -1,0 +1,15 @@
+Loading bindings from data/init/interface.txt
+Resetting textures
+TWBT: version 5.84
+Resetting textures
+--------------------------------------------------
+Welcome to Masterwork Dwarf Fortress version 1.28
+ 
+Utilizing Dwarf Fortress version 43.05 x64
+--------------------------------------------------
+Spring has arrived on the calendar.
+The weather has cleared.
+DFHack is ready. Have a nice day!
+DFHack version 0.43.05-r1 (release) on x86_64
+Type in '?' or 'help' for general help, 'ls' to see all commands.
+Plugin twbt has failed to shutdown!

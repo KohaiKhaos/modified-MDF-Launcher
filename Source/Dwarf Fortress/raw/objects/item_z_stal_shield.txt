@@ -1,0 +1,26 @@
+item_shield
+
+armoury
+
+!NO_STAL_ARMORY_ARMOR!OBJECT:ITEM]
+
+[ITEM_SHIELD:ITEM_SHIELD_ROUND]
+[NAME:round shield:round shields]
+[ARMORLEVEL:3]
+[BLOCKCHANCE:30]
+[UPSTEP:1]
+[MATERIAL_SIZE:3]
+
+[ITEM_SHIELD:ITEM_SHIELD_HEATER] 
+[NAME:heater shield:heater shields]
+[ARMORLEVEL:3]
+[BLOCKCHANCE:35]
+[UPSTEP:2]
+[MATERIAL_SIZE:6]
+
+#### EOF - THIS LINE IS 80 CHARACTERS LONG #####50########60########70########80
+5
+4
+3
+2
+1

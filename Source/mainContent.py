@@ -1,7 +1,8 @@
 #file: mainContent.py
 
 import tkinter as tk
-import ttk
+from tkinter import ttk
+#import ttk
 
 defaultSelectColor = "#444"
 defaultActiveBackground ="#555"

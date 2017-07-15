@@ -1,0 +1,116 @@
+<configs>
+	<page name="Init">
+		<column>
+			<mod name="Standardization">
+				<column>
+					<switch>
+						Name = Standardized Leather
+						Type = 0:200
+						Caption = 
+						Value = 1
+						Filetype = raw
+						TagOff = NO_DIVERSE_LEATHER
+						TargetNum = 0
+						Switch = 0
+					</switch>
+				</column>
+			</mod>
+		</column>
+	</page>
+	<page name="Settings">
+		<column>
+			<mod name="Standardization">
+				<column>
+					<switch>
+						Name = Standardized Leather
+						Type = bool
+						Caption = 
+						Value = 1
+						Filetype = raw
+						TagOn = 
+						TagOff = NO_DIVERSE_LEATHER
+						ControlOn =
+						ControlOff =
+						//Searches for lines starting with NO_DIVERSE_LEATHER, and activates them if this tag is off, and deactivates them if it's on
+						TargetNum = 0
+						//Searches through all files
+						Switch = 0
+						Target =
+					</switch>
+				</column>
+			</mod>
+		</column>
+	</page>
+	<page name="Settings">
+		<column>
+			<mod name="Standardization">
+				<column>
+					<switch>
+						Name = Standardized Leather
+						Type = bool
+						Caption = 
+						Value = 1
+						Filetype = raw
+						TagOn = 
+						TagOff = NO_DIVERSE_LEATHER
+						ControlOn =
+						ControlOff =
+						//Searches for lines starting with NO_DIVERSE_LEATHER, and activates them if this tag is off, and deactivates them if it's on
+						TargetNum = 0
+						//Searches through all files
+						Switch = 0
+						Target =
+					</switch>
+				</column>
+			</mod>
+		</column>
+	</page>
+	<page name="Settings">
+		<column>
+			<mod name="Standardization">
+				<column>
+					<switch>
+						Name = Standardized Leather
+						Type = bool
+						Caption = 
+						Value = 1
+						Filetype = raw
+						TagOn = 
+						TagOff = NO_DIVERSE_LEATHER
+						ControlOn =
+						ControlOff =
+						//Searches for lines starting with NO_DIVERSE_LEATHER, and activates them if this tag is off, and deactivates them if it's on
+						TargetNum = 0
+						//Searches through all files
+						Switch = 0
+						Target =
+					</switch>
+				</column>
+			</mod>
+		</column>
+	</page>
+	<page name="Settings">
+		<column>
+			<mod name="Standardization">
+				<column>
+					<switch>
+						Name = Standardized Leather
+						Type = bool
+						Caption = 
+						Value = 1
+						Filetype = raw
+						TagOn = 
+						TagOff = NO_DIVERSE_LEATHER
+						ControlOn =
+						ControlOff =
+						//Searches for lines starting with NO_DIVERSE_LEATHER, and activates them if this tag is off, and deactivates them if it's on
+						TargetNum = 0
+						//Searches through all files
+						Switch = 0
+						Target =
+					</switch>
+				</column>
+			</mod>
+		</column>
+	</page>
+</configs>
